@@ -78,9 +78,12 @@ export class EvaluatedValueUnderlines {
 		}
 		const published = this.published.get(editor.document.uri.toString());
 		if (!published) return;
-		// Ranges computed for text an edit has since replaced would be drawn in the wrong place. The decorations
-		// already drawn move with the edit, and the server publishes ranges for the new text once it has evaluated it.
-		if (published.version !== editor.document.version) return;
+		// Ranges computed for text an edit has since replaced would be drawn in the wrong place. The server publishes
+		// ranges for the new text once it has evaluated it.
+		if (published.version !== editor.document.version) {
+			editor.setDecorations(this.decoration, []);
+			return;
+		}
 		editor.setDecorations(this.decoration, this.mode === 'always' ? published.ranges : this.onCursorLines(editor, published.ranges));
 	}
 

@@ -286,11 +286,15 @@ function narrowestSpanAt(spans: EvaluatedSpan[], offset: number): EvaluatedSpan 
 }
 
 async function publishEvaluatableRanges(document: TextDocument) {
-	const { uri, version } = document;
-	const spans = await evaluatedSpans(document);
-	// Documents are updated in place, so an edit or close while the file was evaluated leaves these offsets stale.
-	// The newer text publishes its own ranges.
-	if (documents.get(uri)?.version !== version) return;
+	const { uri } = document;
+	let spans: EvaluatedSpan[];
+	let version: number;
+	// Documents are updated in place, so an edit during evaluation leaves these offsets stale.
+	do {
+		version = document.version;
+		spans = await evaluatedSpans(document);
+		if (documents.get(uri) !== document) return;
+	} while (document.version !== version);
 	// Only expressions are marked. An attribute name's value is the one of the expression beside it, so marking both
 	// would mark every value twice; names still answer hovers from the full set of spans.
 	connection.sendNotification('terragrunt/evaluatableRanges', {
